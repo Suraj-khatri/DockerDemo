@@ -1,3 +1,4 @@
+# Runtime Image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
 WORKDIR /app
@@ -5,27 +6,29 @@ WORKDIR /app
 EXPOSE 8080
 
 
+# Build Image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
 
-COPY ["DockerDemo/DockerDemo.csproj", "DockerDemo/"]
+# Copy only csproj first
+COPY DockerDemo.csproj .
 
-RUN dotnet restore "DockerDemo/DockerDemo.csproj"
+# Restore packages
+RUN dotnet restore
 
+# Copy the remaining source code
 COPY . .
 
-WORKDIR "/src/DockerDemo"
-
-RUN dotnet publish "DockerDemo.csproj" \
--c Release \
--o /app/publish
+# Publish the application
+RUN dotnet publish -c Release -o /app/publish
 
 
+# Final Image
 FROM base AS final
 
 WORKDIR /app
 
 COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet","DockerDemo.dll"]
+ENTRYPOINT ["dotnet", "DockerDemo.dll"]
