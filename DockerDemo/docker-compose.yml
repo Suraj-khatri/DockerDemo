@@ -6,7 +6,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=Password@123;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
     depends_on:
       - sqlserver
 
