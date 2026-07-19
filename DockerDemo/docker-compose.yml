@@ -1,4 +1,11 @@
 services:
+  migrate:
+    build: .
+    command: ["dotnet", "ef", "database", "update"]
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
   web:
     build: .
     ports:
