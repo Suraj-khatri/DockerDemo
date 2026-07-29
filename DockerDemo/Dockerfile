@@ -17,6 +17,9 @@ COPY DockerDemo.csproj .
 # Restore packages
 RUN dotnet restore
 
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
+
 # Copy source code
 COPY . .
 
