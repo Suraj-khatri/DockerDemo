@@ -8,17 +8,34 @@ services:
       - "1433:1433"
     volumes:
       - sql_data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   migrate:
     build:
       context: .
       target: build
     working_dir: /src
-    command: ["dotnet", "ef", "database", "update"]
+    command:
+      [
+        "dotnet",
+        "ef",
+        "database",
+        "update",
+        "--verbose"
+      ]
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
 
   web:
     build:
@@ -31,7 +48,8 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
     depends_on:
-      - migrate
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   sql_data:
