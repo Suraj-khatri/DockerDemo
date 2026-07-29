@@ -1,31 +1,33 @@
-# ==========================
-# Build Stage
-# ==========================
+# Runtime Image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+
+WORKDIR /app
+
+EXPOSE 8080
+
+
+# Build Image
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
 
 # Copy project file
-COPY DockerDemo.csproj ./
+COPY DockerDemo.csproj .
 
 # Restore packages
 RUN dotnet restore
 
-# Copy remaining source
+# Copy source code
 COPY . .
 
 # Publish application
-RUN dotnet publish -c Release -o /app/publish --no-restore
+RUN dotnet publish -c Release -o /app/publish
 
 
-# ==========================
-# Runtime Stage
-# ==========================
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# Final Image
+FROM base AS final
 
 WORKDIR /app
-
-EXPOSE 8080
 
 COPY --from=build /app/publish .
 
