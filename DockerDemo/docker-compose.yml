@@ -1,31 +1,56 @@
 services:
-  migrate:
-    build: .
-    command: ["dotnet", "ef", "database", "update"]
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
-    depends_on:
-      - sqlserver
-  web:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;
-    depends_on:
-      - sqlserver
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=manager@123
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "manager@123"
     ports:
       - "1433:1433"
     volumes:
       - sql_data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'manager@123' -C -Q 'SELECT 1' || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: migrate
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: >
+      bash -c "
+      dotnet restore &&
+      dotnet ef database update
+      "
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dockerdemo
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=DockerDemo;User Id=sa;Password=manager@123;TrustServerCertificate=True;"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   sql_data:
